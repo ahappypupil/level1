@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>单词翻牌 - 新概念英语第一册</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; }
+body { font-family:'Microsoft YaHei','PingFang SC',sans-serif; background:#0a0e27; color:#fff; user-select:none; }
+
+.top-nav { position:fixed; top:0; left:0; right:0; height:48px; background:rgba(10,14,39,0.92); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:space-between; padding:0 14px; z-index:50; border-bottom:1px solid rgba(255,255,255,0.08); }
+.nav-back { color:#7ec8ff; text-decoration:none; font-size:14px; font-weight:600; }
+.nav-title { font-size:15px; font-weight:700; color:#fff; }
+.nav-home { color:#7ec8ff; text-decoration:none; font-size:13px; }
+
+#app { position:fixed; inset:0; }
+.screen { position:absolute; inset:0; display:none; flex-direction:column; }
+.screen.active { display:flex; }
+
+/* 选择界面 */
+#selectScreen { overflow-y:auto; padding:64px 16px 32px; }
+.select-wrap { max-width:680px; margin:0 auto; width:100%; }
+.select-title { text-align:center; margin-bottom:18px; }
+.select-title h1 { font-size:26px; background:linear-gradient(90deg,#f472b6,#fb7185); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:6px; }
+.select-title p { font-size:13px; color:#8a93b2; }
+.section-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:16px; margin-bottom:16px; }
+.section-card h2 { font-size:15px; margin-bottom:12px; color:#cdd6f4; }
+.tab-row { display:flex; gap:8px; margin-bottom:14px; }
+.tab-btn { flex:1; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#8a93b2; font-size:14px; font-weight:600; cursor:pointer; transition:all .2s; font-family:inherit; }
+.tab-btn.active { background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; border-color:transparent; }
+.opt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(86px,1fr)); gap:8px; max-height:220px; overflow-y:auto; padding:4px; }
+.opt-grid::-webkit-scrollbar { width:6px; } .opt-grid::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:3px; }
+.opt-chip { padding:9px 8px; border-radius:9px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03); color:#cdd6f4; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; text-align:center; font-family:inherit; }
+.opt-chip:hover { border-color:#ec4899; }
+.opt-chip.selected { background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; border-color:transparent; }
+.opt-chip .cnt { display:block; font-size:10px; opacity:0.7; font-weight:400; margin-top:2px; }
+.diff-row { display:flex; gap:8px; }
+.diff-btn { flex:1; padding:11px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03); color:#8a93b2; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; font-family:inherit; text-align:center; }
+.diff-btn small { display:block; font-size:10px; opacity:0.7; font-weight:400; margin-top:3px; }
+.diff-btn.active { background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; border-color:transparent; }
+.select-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; }
+.word-stat { font-size:13px; color:#8a93b2; }
+.word-stat b { color:#f472b6; }
+.start-btn { padding:14px 36px; border-radius:12px; border:none; background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 6px 20px rgba(236,72,153,0.4); transition:transform .15s; }
+.start-btn:hover { transform:translateY(-2px); }
+.start-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+/* 游戏界面 */
+#gameScreen { overflow-y:auto; }
+.game-area { max-width:600px; margin:0 auto; width:100%; padding:56px 12px 16px; flex:1; display:flex; flex-direction:column; align-items:center; }
+.hud { position:fixed; top:48px; left:0; right:0; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; z-index:10; pointer-events:none; }
+.hud-pill { background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:5px 11px; font-size:13px; font-weight:700; backdrop-filter:blur(4px); }
+.hud-pill .lbl { font-size:10px; opacity:0.6; font-weight:400; margin-right:4px; }
+.hud-pill.score { color:#fbbf24; }
+.hud-pill.moves { color:#7ec8ff; }
+.hud-pill.time { color:#34d399; }
+.hud-right { display:flex; gap:6px; align-items:center; }
+.pause-btn { width:34px; height:34px; border-radius:8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:14px; cursor:pointer; pointer-events:auto; }
+
+/* 卡牌网格 */
+.card-grid { display:grid; gap:10px; perspective:800px; }
+.card { position:relative; cursor:pointer; transform-style:preserve-3d; transition:transform .4s; }
+.card.flipped { transform:rotateY(180deg); }
+.card.matched { animation:matchPop .4s ease; }
+@keyframes matchPop { 0%{transform:rotateY(180deg) scale(1);} 50%{transform:rotateY(180deg) scale(1.12);} 100%{transform:rotateY(180deg) scale(1);} }
+.card-face { position:absolute; inset:0; border-radius:12px; display:flex; align-items:center; justify-content:center; backface-visibility:hidden; -webkit-backface-visibility:hidden; font-weight:700; text-align:center; padding:4px; word-break:break-word; line-height:1.2; }
+.card-front { background:linear-gradient(135deg,#1a1f3a,#2a3158); border:2px solid rgba(255,255,255,0.12); color:transparent; }
+.card-front::after { content:'❓'; font-size:2em; }
+.card-back { background:linear-gradient(135deg,#1e3a5f,#2563eb); border:2px solid #3b82f6; color:#bfdbfe; transform:rotateY(180deg); }
+.card-back.cn { background:linear-gradient(135deg,#164e3a,#059669); border-color:#10b981; color:#a7f3d0; }
+.card.matched .card-back { border-color:#fbbf24; box-shadow:0 0 16px rgba(251,191,36,0.4); }
+.card.wrong .card-back { border-color:#ef4444; box-shadow:0 0 16px rgba(239,68,68,0.4); }
+
+.ctrl-row { display:flex; gap:10px; justify-content:center; margin-top:14px; }
+.ctrl-btn { padding:10px 20px; border-radius:10px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); color:#cdd6f4; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
+.ctrl-btn:hover { background:rgba(255,255,255,0.12); }
+
+/* 暂停 */
+.pause-overlay { position:fixed; inset:0; background:rgba(10,14,39,0.85); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:30; backdrop-filter:blur(4px); }
+.pause-overlay.show { display:flex; }
+.pause-overlay h2 { font-size:28px; margin-bottom:24px; }
+.pause-overlay button { padding:13px 32px; border-radius:11px; border:none; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; margin:5px; }
+.pause-overlay .resume { background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; }
+.pause-overlay .quit { background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.15); }
+
+/* 结束 */
+#endScreen { align-items:center; justify-content:center; padding:20px; }
+.end-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:32px 28px; max-width:420px; width:100%; text-align:center; }
+.end-icon { font-size:56px; margin-bottom:8px; }
+.end-title { font-size:24px; font-weight:800; margin-bottom:6px; }
+.end-sub { font-size:13px; color:#8a93b2; margin-bottom:22px; }
+.end-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:24px; }
+.end-stat { background:rgba(255,255,255,0.04); border-radius:10px; padding:14px 8px; }
+.end-stat .num { font-size:26px; font-weight:800; color:#f472b6; }
+.end-stat .lbl { font-size:11px; color:#8a93b2; margin-top:2px; }
+.end-actions { display:flex; gap:10px; }
+.end-actions button { flex:1; padding:13px; border-radius:11px; border:none; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+.btn-again { background:linear-gradient(135deg,#ec4899,#f472b6); color:#fff; }
+.btn-menu { background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.15); }
+.stars { font-size:28px; margin-bottom:8px; letter-spacing:4px; }
+
+.toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:28px; font-weight:900; pointer-events:none; z-index:200; opacity:0; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="index.html" class="nav-back">‹ 返回</a>
+  <span class="nav-title">🃏 单词翻牌</span>
+  <a href="../index.html" class="nav-home">🏠 首页</a>
+</nav>
+<div id="app">
+  <div id="selectScreen" class="screen active">
+    <div class="select-wrap">
+      <div class="select-title">
+        <h1>🃏 单词翻牌</h1>
+        <p>翻开卡牌找到英文与中文释义的配对，用最少步数完成！</p>
+      </div>
+      <div class="section-card">
+        <h2>📚 词汇范围</h2>
+        <div class="tab-row">
+          <button class="tab-btn active" data-mode="lesson">按课次选择</button>
+          <button class="tab-btn" data-mode="topic">按主题选择</button>
+        </div>
+        <div id="optGrid" class="opt-grid"></div>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button id="selectAll" class="tab-btn" style="flex:0 0 auto; padding:7px 14px; font-size:12px;">全选</button>
+          <button id="clearAll" class="tab-btn" style="flex:0 0 auto; padding:7px 14px; font-size:12px;">清空</button>
+        </div>
+      </div>
+      <div class="section-card">
+        <h2>⚡ 难度</h2>
+        <div class="diff-row">
+          <button class="diff-btn active" data-diff="easy">简单<small>6对·3×4</small></button>
+          <button class="diff-btn" data-diff="normal">普通<small>8对·4×4</small></button>
+          <button class="diff-btn" data-diff="hard">困难<small>10对·4×5</small></button>
+        </div>
+      </div>
+      <div class="select-footer">
+        <div class="word-stat">已选词汇：<b id="wordCount">0</b> 个</div>
+        <button id="startBtn" class="start-btn" disabled>开始翻牌</button>
+      </div>
+    </div>
+  </div>
+  <div id="gameScreen" class="screen">
+    <div class="hud">
+      <div style="display:flex; gap:6px;">
+        <div class="hud-pill score"><span class="lbl">分数</span><span id="hudScore">0</span></div>
+        <div class="hud-pill moves"><span class="lbl">步数</span><span id="hudMoves">0</span></div>
+        <div class="hud-pill time"><span class="lbl">⏱</span><span id="hudTime">0</span>s</div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-pill" style="color:#f472b6;"><span class="lbl">已配对</span><span id="hudMatched">0</span>/<span id="hudTotal">0</span></div>
+        <button class="pause-btn" id="pauseBtn">⏸</button>
+      </div>
+    </div>
+    <div class="game-area">
+      <div class="card-grid" id="cardGrid"></div>
+      <div class="ctrl-row">
+        <button class="ctrl-btn" id="peekBtn">👁 偷看 <span style="font-size:11px;opacity:.7">(2)</span></button>
+      </div>
+    </div>
+    <div class="pause-overlay" id="pauseOverlay">
+      <h2>⏸ 已暂停</h2>
+      <button class="resume" id="resumeBtn">继续游戏</button>
+      <button class="quit" id="quitBtn">退出游戏</button>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+  <div id="endScreen" class="screen">
+    <div class="end-card">
+      <div class="end-icon" id="endIcon">🎉</div>
+      <div class="stars" id="endStars">⭐⭐⭐</div>
+      <div class="end-title" id="endTitle">完美通关！</div>
+      <div class="end-sub" id="endSub"></div>
+      <div class="end-stats">
+        <div class="end-stat"><div class="num" id="endScore">0</div><div class="lbl">最终得分</div></div>
+        <div class="end-stat"><div class="num" id="endMoves">0</div><div class="lbl">总步数</div></div>
+        <div class="end-stat"><div class="num" id="endTime">0s</div><div class="lbl">用时</div></div>
+        <div class="end-stat"><div class="num" id="endAcc">0%</div><div class="lbl">命中率</div></div>
+      </div>
+      <div class="end-actions">
+        <button class="btn-again" id="againBtn">再来一局</button>
+        <button class="btn-menu" id="menuBtn">返回选择</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="vocabulary.js"></script>
+<script>
+(function(){
+'use strict';
+const VOCAB=(typeof vocabulary!=='undefined'&&vocabulary.vocabulary)||[];
+const ALL_TOPICS=[],ALL_LESSONS=[]; const topicSet={},lessonSet={};
+VOCAB.forEach(v=>{ if(v.topic&&!topicSet[v.topic]){topicSet[v.topic]=0;ALL_TOPICS.push(v.topic);} if(v.topic)topicSet[v.topic]++; const ln=v.lesson; if(ln!=null&&!lessonSet[ln]){lessonSet[ln]=0;ALL_LESSONS.push(ln);} if(ln!=null)lessonSet[ln]++; });
+ALL_LESSONS.sort((a,b)=>a-b);
+const state={mode:'lesson',diff:'easy',selectedLessons:new Set(),selectedTopics:new Set(),pool:[]};
+const DIFF_CFG={easy:{pairs:6,cols:3,rows:4},normal:{pairs:8,cols:4,rows:4},hard:{pairs:10,cols:4,rows:5}};
+const $=id=>document.getElementById(id);
+
+function renderOptions(){
+  const g=$('optGrid'); g.innerHTML='';
+  const items=state.mode==='lesson'?ALL_LESSONS.map(l=>({key:l,label:l===0?'通用词汇':'第'+l+'课',cnt:lessonSet[l]})):ALL_TOPICS.map(t=>({key:t,label:t,cnt:topicSet[t]}));
+  const sel=state.mode==='lesson'?state.selectedLessons:state.selectedTopics;
+  items.forEach(it=>{ const el=document.createElement('div'); el.className='opt-chip'+(sel.has(it.key)?' selected':''); el.innerHTML=it.label+'<span class="cnt">'+it.cnt+'词</span>'; el.onclick=()=>{if(sel.has(it.key))sel.delete(it.key);else sel.add(it.key);el.classList.toggle('selected');updateStat();}; g.appendChild(el); });
+  updateStat();
+}
+function updateStat(){
+  const sel=state.mode==='lesson'?state.selectedLessons:state.selectedTopics;
+  if(sel.size===0){state.pool=[];$('wordCount').textContent='0';$('startBtn').disabled=true;return;}
+  state.pool=state.mode==='lesson'?VOCAB.filter(v=>state.selectedLessons.has(v.lesson)):VOCAB.filter(v=>state.selectedTopics.has(v.topic));
+  $('wordCount').textContent=state.pool.length;
+  $('startBtn').disabled=state.pool.length<DIFF_CFG[state.diff].pairs;
+}
+document.querySelectorAll('.tab-btn[data-mode]').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.tab-btn[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.mode=b.dataset.mode;renderOptions();};});
+$('selectAll').onclick=()=>{const sel=state.mode==='lesson'?state.selectedLessons:state.selectedTopics;(state.mode==='lesson'?ALL_LESSONS:ALL_TOPICS).forEach(k=>sel.add(k));renderOptions();};
+$('clearAll').onclick=()=>{(state.mode==='lesson'?state.selectedLessons:state.selectedTopics).clear();renderOptions();};
+document.querySelectorAll('.diff-btn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.diff-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.diff=b.dataset.diff;updateStat();};});
+
+/* 游戏 */
+const game={running:false,paused:false,score:0,moves:0,hits:0,matched:0,totalPairs:0,peeksLeft:2,firstCard:null,lock:false,startTime:0,timerInt:null,cards:[]};
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function startGame(){
+  $('selectScreen').classList.remove('active');$('endScreen').classList.remove('active');$('gameScreen').classList.add('active');
+  resetGame(); buildCards(); renderCards();
+}
+function resetGame(){
+  const cfg=DIFF_CFG[state.diff];
+  game.totalPairs=cfg.pairs; game.matched=0; game.score=0; game.moves=0; game.hits=0; game.peeksLeft=2;
+  game.firstCard=null; game.lock=false; game.running=true; game.paused=false; game.startTime=Date.now();
+  if(game.timerInt)clearInterval(game.timerInt);
+  game.timerInt=setInterval(()=>{
+    if(game.paused)return;
+    $('hudTime').textContent=Math.floor((Date.now()-game.startTime)/1000);
+  },1000);
+  $('peekBtn').querySelector('span').textContent='('+game.peeksLeft+')';
+  $('peekBtn').disabled=false;
+  updateHUD();
+}
+function buildCards(){
+  const cfg=DIFF_CFG[state.diff];
+  const pool=shuffle(state.pool.filter(v=>v.word&&v.meaning)).slice(0,cfg.pairs);
+  const cards=[];
+  pool.forEach((v,i)=>{
+    cards.push({pairId:i,type:'en',text:v.word,vocab:v,flipped:false,matched:false});
+    cards.push({pairId:i,type:'cn',text:v.meaning,vocab:v,flipped:false,matched:false});
+  });
+  game.cards=shuffle(cards);
+}
+function renderCards(){
+  const cfg=DIFF_CFG[state.diff];
+  const grid=$('cardGrid');
+  grid.innerHTML='';
+  grid.style.gridTemplateColumns='repeat('+cfg.cols+', 1fr)';
+  // 计算卡片尺寸
+  const wrapW=Math.min(window.innerWidth-32,580);
+  const cardW=Math.floor((wrapW-(cfg.cols-1)*10)/cfg.cols);
+  const cardH=Math.floor(cardW*1.3);
+  game.cards.forEach((card,idx)=>{
+    const el=document.createElement('div');
+    el.className='card';
+    if(card.flipped||card.matched) el.classList.add('flipped');
+    if(card.matched) el.classList.add('matched');
+    el.style.width=cardW+'px'; el.style.height=cardH+'px';
+    el.style.fontSize=Math.max(10,Math.floor(cardW*0.14))+'px';
+    const front=document.createElement('div'); front.className='card-face card-front';
+    const back=document.createElement('div'); back.className='card-face card-back'+(card.type==='cn'?' cn':'');
+    back.textContent=card.text;
+    el.appendChild(front); el.appendChild(back);
+    el.dataset.idx=idx;
+    el.onclick=()=>onCardClick(idx);
+    grid.appendChild(el);
+  });
+  $('hudTotal').textContent=game.totalPairs;
+  updateHUD();
+}
+function onCardClick(idx){
+  if(!game.running||game.paused||game.lock)return;
+  const card=game.cards[idx];
+  if(card.flipped||card.matched)return;
+  const el=$('cardGrid').children[idx];
+  card.flipped=true; el.classList.add('flipped');
+  if(!game.firstCard){
+    game.firstCard={idx,card,el};
+    return;
+  }
+  // 第二张
+  game.moves++;
+  const first=game.firstCard;
+  if(first.card.pairId===card.pairId && first.card.type!==card.type){
+    // 配对成功
+    game.hits++;
+    game.matched++;
+    game.score+=100+Math.max(0,15-(game.moves-game.matched*2))*5;
+    setTimeout(()=>{
+      first.el.classList.add('matched');
+      el.classList.add('matched');
+      first.card.matched=true; card.matched=true;
+      showToast('✓ 配对！','#34d399');
+      updateHUD();
+      if(game.matched>=game.totalPairs){ setTimeout(()=>endGame(true),600); }
+    },400);
+    game.firstCard=null;
+  } else {
+    // 不配对
+    game.lock=true;
+    setTimeout(()=>{
+      first.el.classList.add('wrong'); el.classList.add('wrong');
+    },300);
+    setTimeout(()=>{
+      first.card.flipped=false; card.flipped=false;
+      first.el.classList.remove('flipped','wrong');
+      el.classList.remove('flipped','wrong');
+      game.firstCard=null; game.lock=false;
+    },900);
+    updateHUD();
+  }
+}
+function usePeek(){
+  if(!game.running||game.paused||game.peeksLeft<=0||game.lock)return;
+  game.peeksLeft--;
+  $('peekBtn').querySelector('span').textContent='('+game.peeksLeft+')';
+  if(game.peeksLeft===0)$('peekBtn').disabled=true;
+  game.lock=true;
+  const grid=$('cardGrid');
+  const toRestore=[];
+  game.cards.forEach((c,i)=>{
+    if(!c.matched&&!c.flipped){ const el=grid.children[i]; el.classList.add('flipped'); toRestore.push({i,el}); }
+  });
+  setTimeout(()=>{
+    toRestore.forEach(r=>r.el.classList.remove('flipped'));
+    game.lock=false;
+  },1500);
+  showToast('👁 偷看1.5秒','#fbbf24');
+}
+function updateHUD(){ $('hudScore').textContent=game.score; $('hudMoves').textContent=game.moves; $('hudMatched').textContent=game.matched; }
+let toastTimer=null;
+function showToast(text,color){ const t=$('toast'); t.textContent=text; t.style.color=color; t.style.transition='none'; t.style.opacity='1'; t.style.transform='translate(-50%,-50%) scale(1.2)'; clearTimeout(toastTimer); requestAnimationFrame(()=>{t.style.transition='all .6s ease';t.style.opacity='0';t.style.transform='translate(-50%,-80%) scale(1)';}); }
+function togglePause(){ if(!game.running)return; game.paused=!game.paused; $('pauseOverlay').classList.toggle('show',game.paused); }
+function endGame(completed){
+  game.running=false; if(game.timerInt)clearInterval(game.timerInt);
+  const elapsed=Math.floor((Date.now()-game.startTime)/1000);
+  const acc=game.moves>0?Math.round(game.hits/game.moves*100):0;
+  // 星级评定
+  const perfectMoves=game.totalPairs;
+  const ratio=game.moves/perfectMoves;
+  let stars=1;
+  if(ratio<=1.5)stars=3; else if(ratio<=2.2)stars=2;
+  $('endScore').textContent=game.score; $('endMoves').textContent=game.moves; $('endTime').textContent=elapsed+'s'; $('endAcc').textContent=acc+'%';
+  $('endStars').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  if(stars===3){$('endIcon').textContent='🏆';$('endTitle').textContent='完美通关！';$('endSub').textContent='记忆力超群！';}
+  else if(stars===2){$('endIcon').textContent='🎉';$('endTitle').textContent='不错！';$('endSub').textContent='再来一局拿三星吧！';}
+  else {$('endIcon').textContent='💪';$('endTitle').textContent='通关了！';$('endSub').textContent='多练习能拿更高星！';}
+  $('gameScreen').classList.remove('active');$('endScreen').classList.add('active');
+}
+$('startBtn').onclick=()=>{if(state.pool.length<DIFF_CFG[state.diff].pairs)return;startGame();};
+$('peekBtn').onclick=usePeek;
+$('pauseBtn').onclick=togglePause;
+$('resumeBtn').onclick=togglePause;
+$('quitBtn').onclick=()=>{game.running=false;game.paused=false;if(game.timerInt)clearInterval(game.timerInt);$('pauseOverlay').classList.remove('show');$('gameScreen').classList.remove('active');$('selectScreen').classList.add('active');};
+$('againBtn').onclick=startGame;
+$('menuBtn').onclick=()=>{$('endScreen').classList.remove('active');$('selectScreen').classList.add('active');};
+window.addEventListener('resize',()=>{if(game.running)renderCards();});
+renderOptions();
+})();
+</script>
+</body>
+</html>

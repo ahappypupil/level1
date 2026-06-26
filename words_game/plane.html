@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>单词打飞机 - 新概念英语第一册</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; }
+body {
+  font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+  background:#0a0e27;
+  color:#fff;
+  user-select:none;
+}
+/* ===== 顶部导航 ===== */
+.top-nav {
+  position:fixed; top:0; left:0; right:0; height:48px;
+  background:rgba(10,14,39,0.92); backdrop-filter:blur(8px);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 14px; z-index:50; border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.nav-back { color:#7ec8ff; text-decoration:none; font-size:14px; font-weight:600; display:flex; align-items:center; gap:4px; }
+.nav-title { font-size:15px; font-weight:700; color:#fff; }
+.nav-home { color:#7ec8ff; text-decoration:none; font-size:13px; }
+
+/* ===== 通用 ===== */
+#app { position:fixed; inset:0; }
+.screen { position:absolute; inset:0; display:none; flex-direction:column; }
+.screen.active { display:flex; }
+
+/* ===== 选择界面 ===== */
+#selectScreen { overflow-y:auto; padding:64px 16px 32px; }
+.select-wrap { max-width:680px; margin:0 auto; width:100%; }
+.select-title { text-align:center; margin-bottom:18px; }
+.select-title h1 { font-size:26px; background:linear-gradient(90deg,#7ec8ff,#a78bfa); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:6px; }
+.select-title p { font-size:13px; color:#8a93b2; }
+
+.section-card {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px; padding:16px; margin-bottom:16px;
+}
+.section-card h2 { font-size:15px; margin-bottom:12px; color:#cdd6f4; display:flex; align-items:center; gap:6px; }
+
+.tab-row { display:flex; gap:8px; margin-bottom:14px; }
+.tab-btn {
+  flex:1; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);
+  background:transparent; color:#8a93b2; font-size:14px; font-weight:600; cursor:pointer;
+  transition:all .2s; font-family:inherit;
+}
+.tab-btn.active { background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff; border-color:transparent; }
+
+/* 选项网格 */
+.opt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(86px,1fr)); gap:8px; max-height:260px; overflow-y:auto; padding:4px; }
+.opt-grid::-webkit-scrollbar { width:6px; }
+.opt-grid::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:3px; }
+.opt-chip {
+  padding:9px 8px; border-radius:9px; border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.03); color:#cdd6f4; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .15s; text-align:center; font-family:inherit;
+}
+.opt-chip:hover { border-color:#3b82f6; }
+.opt-chip.selected { background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff; border-color:transparent; }
+.opt-chip .cnt { display:block; font-size:10px; opacity:0.7; font-weight:400; margin-top:2px; }
+
+/* 题型 */
+.qtype-row { display:flex; gap:8px; }
+.qtype-btn {
+  flex:1; padding:14px 8px; border-radius:10px; border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.03); color:#cdd6f4; font-size:14px; font-weight:600;
+  cursor:pointer; transition:all .15s; font-family:inherit; text-align:center;
+}
+.qtype-btn.active { background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border-color:transparent; }
+.qtype-btn small { display:block; font-size:10px; opacity:0.7; font-weight:400; margin-top:3px; }
+
+/* 难度 */
+.diff-row { display:flex; gap:8px; }
+.diff-btn {
+  flex:1; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.03); color:#8a93b2; font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .15s; font-family:inherit;
+}
+.diff-btn.active { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#1a1a2e; border-color:transparent; }
+
+/* 统计 + 开始 */
+.select-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:8px; }
+.word-stat { font-size:13px; color:#8a93b2; }
+.word-stat b { color:#7ec8ff; }
+.start-btn {
+  padding:14px 36px; border-radius:12px; border:none;
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff;
+  font-size:16px; font-weight:700; cursor:pointer; font-family:inherit;
+  box-shadow:0 6px 20px rgba(59,130,246,0.4); transition:transform .15s;
+}
+.start-btn:hover { transform:translateY(-2px); }
+.start-btn:active { transform:translateY(0); }
+.start-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+/* ===== 游戏界面 ===== */
+#gameScreen { background:#0a0e27; }
+#gameCanvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+
+/* HUD */
+.hud { position:absolute; top:56px; left:0; right:0; padding:8px 14px; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; z-index:10; }
+.hud-left, .hud-right { display:flex; flex-direction:column; gap:6px; }
+.hud-right { align-items:flex-end; }
+.hud-pill { background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:5px 11px; font-size:13px; font-weight:700; backdrop-filter:blur(4px); }
+.hud-pill.score { color:#fbbf24; }
+.hud-pill.combo { color:#34d399; }
+.hud-pill .lbl { font-size:10px; opacity:0.6; font-weight:400; margin-right:4px; }
+.hp-bar { display:flex; gap:4px; }
+.hp-heart { font-size:18px; filter:drop-shadow(0 0 3px rgba(239,68,68,0.6)); transition:all .3s; }
+.hp-heart.lost { filter:grayscale(1) opacity(0.3); transform:scale(0.8); }
+
+/* 目标提示 */
+.target-box {
+  position:absolute; top:104px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.55); border:1.5px solid rgba(126,200,255,0.5);
+  border-radius:14px; padding:10px 22px; text-align:center; z-index:10;
+  backdrop-filter:blur(6px); max-width:90vw; pointer-events:none;
+  box-shadow:0 4px 24px rgba(59,130,246,0.25);
+}
+.target-box .tgt-lbl { font-size:11px; color:#7ec8ff; font-weight:600; margin-bottom:2px; }
+.target-box .tgt-word { font-size:22px; font-weight:800; color:#fff; letter-spacing:1px; word-break:break-word; }
+.target-box .tgt-pos { font-size:11px; color:#8a93b2; margin-top:2px; }
+
+/* 控制提示 */
+.controls-hint {
+  position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+  font-size:11px; color:rgba(255,255,255,0.35); z-index:10; pointer-events:none;
+  text-align:center; white-space:nowrap;
+}
+
+/* 鼠标指针 */
+#gameCanvas { cursor:crosshair; }
+
+/* 暂停按钮 */
+.pause-btn { position:absolute; top:56px; right:14px; width:36px; height:36px; border-radius:9px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:16px; cursor:pointer; z-index:12; display:none; }
+#gameScreen.active .pause-btn { display:block; }
+
+/* ===== 结束界面 ===== */
+#endScreen { align-items:center; justify-content:center; padding:20px; }
+.end-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:32px 28px; max-width:420px; width:100%; text-align:center; }
+.end-icon { font-size:56px; margin-bottom:8px; }
+.end-title { font-size:24px; font-weight:800; margin-bottom:6px; }
+.end-sub { font-size:13px; color:#8a93b2; margin-bottom:22px; }
+.end-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:24px; }
+.end-stat { background:rgba(255,255,255,0.04); border-radius:10px; padding:14px 8px; }
+.end-stat .num { font-size:26px; font-weight:800; color:#7ec8ff; }
+.end-stat .lbl { font-size:11px; color:#8a93b2; margin-top:2px; }
+.end-actions { display:flex; gap:10px; }
+.end-actions button { flex:1; padding:13px; border-radius:11px; border:none; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+.btn-again { background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff; }
+.btn-menu { background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.15); }
+
+/* 暂停遮罩 */
+.pause-overlay { position:absolute; inset:0; background:rgba(10,14,39,0.85); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:30; backdrop-filter:blur(4px); }
+.pause-overlay.show { display:flex; }
+.pause-overlay h2 { font-size:28px; margin-bottom:24px; }
+.pause-overlay button { padding:13px 32px; border-radius:11px; border:none; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; margin:5px; }
+.pause-overlay .resume { background:linear-gradient(135deg,#10b981,#34d399); color:#fff; }
+.pause-overlay .quit { background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.15); }
+
+/* Toast */
+.toast { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:32px; font-weight:900; pointer-events:none; z-index:20; opacity:0; }
+</style>
+</head>
+<body>
+<nav class="top-nav">
+  <a href="index.html" class="nav-back">‹ 返回</a>
+  <span class="nav-title">✈️ 单词打飞机</span>
+  <a href="../index.html" class="nav-home">🏠 首页</a>
+</nav>
+
+<div id="app">
+  <!-- 选择界面 -->
+  <div id="selectScreen" class="screen active">
+    <div class="select-wrap">
+      <div class="select-title">
+        <h1>✈️ 单词打飞机</h1>
+        <p>选择词汇范围与题型，点击正确答案的敌机即可开火！</p>
+      </div>
+
+      <div class="section-card">
+        <h2>📚 词汇范围</h2>
+        <div class="tab-row">
+          <button class="tab-btn active" data-mode="lesson">按课次选择</button>
+          <button class="tab-btn" data-mode="topic">按主题选择</button>
+        </div>
+        <div id="optGrid" class="opt-grid"></div>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button id="selectAll" class="tab-btn" style="flex:0 0 auto; padding:7px 14px; font-size:12px;">全选</button>
+          <button id="clearAll" class="tab-btn" style="flex:0 0 auto; padding:7px 14px; font-size:12px;">清空</button>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2>📝 题型</h2>
+        <div class="qtype-row">
+          <button class="qtype-btn active" data-qtype="en2cn">英译汉<small>看英文选中文</small></button>
+          <button class="qtype-btn" data-qtype="cn2en">汉译英<small>看中文选英文</small></button>
+          <button class="qtype-btn" data-qtype="mixed">混合<small>随机出题</small></button>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <h2>⚡ 难度</h2>
+        <div class="diff-row">
+          <button class="diff-btn" data-diff="easy">简单<small style="display:block;font-size:10px;opacity:.7;font-weight:400">慢速·3选项</small></button>
+          <button class="diff-btn active" data-diff="normal">普通<small style="display:block;font-size:10px;opacity:.7;font-weight:400">中速·4选项</small></button>
+          <button class="diff-btn" data-diff="hard">困难<small style="display:block;font-size:10px;opacity:.7;font-weight:400">快速·5选项</small></button>
+        </div>
+      </div>
+
+      <div class="select-footer">
+        <div class="word-stat">已选词汇：<b id="wordCount">0</b> 个</div>
+        <button id="startBtn" class="start-btn" disabled>开始战斗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 游戏界面 -->
+  <div id="gameScreen" class="screen">
+    <canvas id="gameCanvas"></canvas>
+    <div class="hud">
+      <div class="hud-left">
+        <div class="hud-pill score"><span class="lbl">分数</span><span id="hudScore">0</span></div>
+        <div class="hud-pill combo"><span class="lbl">连击</span><span id="hudCombo">0</span></div>
+      </div>
+      <div class="hud-right">
+        <div class="hp-bar" id="hpBar"></div>
+      </div>
+    </div>
+    <button class="pause-btn" id="pauseBtn">⏸</button>
+    <div class="target-box" id="targetBox">
+      <div class="tgt-lbl" id="tgtLbl">翻译：</div>
+      <div class="tgt-word" id="tgtWord">—</div>
+      <div class="tgt-pos" id="tgtPos"></div>
+    </div>
+    <div class="controls-hint">👆 点击敌机发射炮弹　·　P 暂停</div>
+    <div class="pause-overlay" id="pauseOverlay">
+      <h2>⏸ 已暂停</h2>
+      <button class="resume" id="resumeBtn">继续游戏</button>
+      <button class="quit" id="quitBtn">退出游戏</button>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <!-- 结束界面 -->
+  <div id="endScreen" class="screen">
+    <div class="end-card">
+      <div class="end-icon" id="endIcon">💥</div>
+      <div class="end-title" id="endTitle">战斗结束</div>
+      <div class="end-sub" id="endSub"></div>
+      <div class="end-stats">
+        <div class="end-stat"><div class="num" id="endScore">0</div><div class="lbl">最终得分</div></div>
+        <div class="end-stat"><div class="num" id="endKill">0</div><div class="lbl">击落敌机</div></div>
+        <div class="end-stat"><div class="num" id="endAcc">0%</div><div class="lbl">命中率</div></div>
+        <div class="end-stat"><div class="num" id="endMaxCombo">0</div><div class="lbl">最高连击</div></div>
+      </div>
+      <div class="end-actions">
+        <button class="btn-again" id="againBtn">再来一局</button>
+        <button class="btn-menu" id="menuBtn">返回选择</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="vocabulary.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ============ 数据预处理 ============ */
+const VOCAB = (typeof vocabulary !== 'undefined' && vocabulary.vocabulary) || [];
+const ALL_TOPICS = [];
+const ALL_LESSONS = [];
+const topicSet = {}, lessonSet = {};
+VOCAB.forEach(v=>{
+  if(v.topic && !topicSet[v.topic]){ topicSet[v.topic]=0; ALL_TOPICS.push(v.topic); }
+  if(v.topic) topicSet[v.topic]++;
+  const ln = v.lesson;
+  if(ln!=null && !lessonSet[ln]){ lessonSet[ln]=0; ALL_LESSONS.push(ln); }
+  if(ln!=null) lessonSet[ln]++;
+});
+ALL_LESSONS.sort((a,b)=>a-b);
+
+/* ============ 状态 ============ */
+const state = {
+  mode:'lesson',          // lesson | topic
+  qtype:'en2cn',          // en2cn | cn2en | mixed
+  diff:'normal',          // easy | normal | hard
+  selectedLessons:new Set(),
+  selectedTopics:new Set(),
+  pool:[],                // 当前选中的词汇
+  questions:[],           // 生成的题目序列
+  qIndex:0,
+};
+const DIFF_CFG = {
+  easy:   { options:3, planeSpeed:0.55, spawnGap:2600 },
+  normal: { options:4, planeSpeed:0.85, spawnGap:2100 },
+  hard:   { options:5, planeSpeed:1.20, spawnGap:1700 },
+};
+
+/* ============ DOM ============ */
+const $=id=>document.getElementById(id);
+const selScreen=$('selectScreen'), gameScreen=$('gameScreen'), endScreen=$('endScreen');
+const optGrid=$('optGrid'), wordCount=$('wordCount'), startBtn=$('startBtn');
+const canvas=$('gameCanvas'), ctx=canvas.getContext('2d');
+
+/* ============ 选择界面渲染 ============ */
+function renderOptions(){
+  optGrid.innerHTML='';
+  const items = state.mode==='lesson'
+    ? ALL_LESSONS.map(l=>({key:l, label:l===0?'通用词汇':'第'+l+'课', cnt:lessonSet[l]}))
+    : ALL_TOPICS.map(t=>({key:t, label:t, cnt:topicSet[t]}));
+  const sel = state.mode==='lesson'?state.selectedLessons:state.selectedTopics;
+  items.forEach(it=>{
+    const el=document.createElement('div');
+    el.className='opt-chip'+(sel.has(it.key)?' selected':'');
+    el.innerHTML=it.label+'<span class="cnt">'+it.cnt+'词</span>';
+    el.onclick=()=>{
+      if(sel.has(it.key)) sel.delete(it.key); else sel.add(it.key);
+      el.classList.toggle('selected');
+      updateStat();
+    };
+    optGrid.appendChild(el);
+  });
+  updateStat();
+}
+function updateStat(){
+  const sel = state.mode==='lesson'?state.selectedLessons:state.selectedTopics;
+  if(sel.size===0){ state.pool=[]; wordCount.textContent='0'; startBtn.disabled=true; return; }
+  if(state.mode==='lesson'){
+    state.pool = VOCAB.filter(v=>state.selectedLessons.has(v.lesson));
+  } else {
+    state.pool = VOCAB.filter(v=>state.selectedTopics.has(v.topic));
+  }
+  wordCount.textContent=state.pool.length;
+  startBtn.disabled = state.pool.length < 4;
+}
+
+/* tab切换 */
+document.querySelectorAll('.tab-btn[data-mode]').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tab-btn[data-mode]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    state.mode=b.dataset.mode;
+    renderOptions();
+  };
+});
+$('selectAll').onclick=()=>{
+  const sel=state.mode==='lesson'?state.selectedLessons:state.selectedTopics;
+  (state.mode==='lesson'?ALL_LESSONS:ALL_TOPICS).forEach(k=>sel.add(k));
+  renderOptions();
+};
+$('clearAll').onclick=()=>{
+  (state.mode==='lesson'?state.selectedLessons:state.selectedTopics).clear();
+  renderOptions();
+};
+document.querySelectorAll('.qtype-btn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.qtype-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    state.qtype=b.dataset.qtype;
+  };
+});
+document.querySelectorAll('.diff-btn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.diff-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    state.diff=b.dataset.diff;
+  };
+});
+
+/* ============ 题目生成 ============ */
+function pickRandom(arr,n){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a.slice(0,n);
+}
+function buildQuestions(){
+  const pool=state.pool.slice();
+  const cfg=DIFF_CFG[state.diff];
+  const list=[];
+  // 打乱
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  pool.forEach((w,idx)=>{
+    let dir;
+    if(state.qtype==='en2cn') dir='en2cn';
+    else if(state.qtype==='cn2en') dir='cn2en';
+    else dir = Math.random()<0.5?'en2cn':'cn2en';
+    // 干扰项：与正确答案同方向
+    let distractors;
+    if(dir==='en2cn'){
+      // 显示英文，选项是中文释义
+      distractors = pickRandom(pool.filter(x=>x.meaning!==w.meaning), cfg.options-1).map(x=>x.meaning);
+    } else {
+      distractors = pickRandom(pool.filter(x=>x.word!==w.word), cfg.options-1).map(x=>x.word);
+    }
+    const correct = dir==='en2cn'? w.meaning : w.word;
+    const options = pickRandom([correct,...distractors], cfg.options);
+    list.push({
+      word:w, dir:dir, correct:correct, options:options,
+      prompt: dir==='en2cn'? w.word : w.meaning
+    });
+  });
+  state.questions=list;
+  state.qIndex=0;
+}
+
+/* ============ 游戏引擎 ============ */
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1, 2);
+  W=window.innerWidth; H=window.innerHeight;
+  canvas.width=W*DPR; canvas.height=H*DPR;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize',resize);
+
+const game = {
+  running:false, paused:false, raf:0,
+  score:0, kill:0, shots:0, hits:0, combo:0, maxCombo:0, hp:3,
+  player:{x:0,y:0,w:46,h:46,targetX:0},
+  bullets:[], planes:[], particles:[], floats:[], trails:[],
+  curQ:null, curPlanes:[],        // 当前题目的飞机（带option）
+  spawnTimer:0, nextSpawn:0,
+  lock:false,                     // 点击锁定（防止连点）
+  lastTs:0,
+};
+
+function resetGame(){
+  game.running=true; game.paused=false;
+  game.score=0; game.kill=0; game.shots=0; game.hits=0; game.combo=0; game.maxCombo=0; game.hp=3;
+  game.bullets=[]; game.planes=[]; game.particles=[]; game.floats=[]; game.trails=[];
+  game.curQ=null; game.curPlanes=[];
+  game.spawnTimer=0; game.lock=false;
+  game.player.x=W/2; game.player.y=H-90; game.player.targetX=W/2;
+  buildQuestions();
+  nextQuestion();
+  updateHUD();
+}
+
+function nextQuestion(){
+  if(state.qIndex>=state.questions.length){
+    // 全部答完，循环
+    state.qIndex=0;
+  }
+  const q=state.questions[state.qIndex++];
+  game.curQ=q;
+  game.curPlanes=[];
+  // 显示目标
+  $('tgtLbl').textContent = q.dir==='en2cn'?'选出正确的中文释义':'选出正确的英文单词';
+  $('tgtWord').textContent = q.prompt;
+  $('tgtPos').textContent = q.word.pos? ('['+q.word.pos+'] · '+q.word.topic) : (q.word.topic||'');
+  // 清除上一题残留飞机
+  game.planes = game.planes.filter(p=>p.dying);
+  // 生成新飞机
+  const cfg=DIFF_CFG[state.diff];
+  q.options.forEach((opt,i)=>{
+    game.curPlanes.push({
+      option:opt, isCorrect:opt===q.correct,
+      x: 60 + Math.random()*(W-120), y:-60-i*70,
+      w:120, h:54, vy: cfg.planeSpeed*(0.85+Math.random()*0.3),
+      hp:1, dying:false, dead:false, wobble:Math.random()*Math.PI*2,
+      hue: 200+Math.random()*40,
+    });
+  });
+  game.planes.push(...game.curPlanes);
+  game.nextSpawn = 0;
+}
+
+/* ===== 输入：点击敌机发射炮弹 ===== */
+window.addEventListener('keydown',e=>{
+  if(!game.running) return;
+  const k=e.key.toLowerCase();
+  if(k==='p') togglePause();
+});
+
+// 点击/触摸 canvas → 检测击中哪架敌机
+function getEventPos(e){
+  const rect=canvas.getBoundingClientRect();
+  let cx,cy;
+  if(e.touches&&e.touches[0]){ cx=e.touches[0].clientX; cy=e.touches[0].clientY; }
+  else if(e.changedTouches&&e.changedTouches[0]){ cx=e.changedTouches[0].clientX; cy=e.changedTouches[0].clientY; }
+  else { cx=e.clientX; cy=e.clientY; }
+  return {x:cx-rect.left, y:cy-rect.top};
+}
+
+function handleTap(e){
+  if(!game.running||game.paused||game.lock) return;
+  e.preventDefault();
+  const pos=getEventPos(e);
+  // 检测点击了哪架敌机（包含文字标签区域）
+  for(let i=0;i<game.planes.length;i++){
+    const p=game.planes[i];
+    if(p.dying||p.dead) continue;
+    // 飞机本体 + 上方文字标签的碰撞区域
+    const hitW=Math.max(p.w, 120), hitH=p.h+40;
+    if(pos.x>p.x-hitW/2 && pos.x<p.x+hitW/2 && pos.y>p.y-hitH/2-20 && pos.y<p.y+hitH/2){
+      fireAt(p);
+      return;
+    }
+  }
+}
+canvas.addEventListener('click',handleTap);
+canvas.addEventListener('touchstart',handleTap,{passive:false});
+
+function fireAt(target){
+  game.lock=true;
+  game.shots++;
+  // 玩家飞机朝目标方向微调
+  game.player.targetX = target.x;
+  // 发射追踪炮弹
+  game.bullets.push({
+    x:game.player.x, y:game.player.y-24,
+    target:target,
+    speed:9, w:6, h:18,
+    angle:0, alive:true,
+  });
+}
+
+/* ===== 追踪炮弹更新 ===== */
+function updateBullets(dt){
+  for(let i=game.bullets.length-1;i>=0;i--){
+    const b=game.bullets[i];
+    if(!b.alive){ game.bullets.splice(i,1); continue; }
+    // 目标已死/已移除 → 炮弹直线飞出后消失
+    if(!b.target || b.target.dead || b.target.dying){
+      b.y -= b.speed;
+      if(b.y<-30){ game.bullets.splice(i,1); }
+      continue;
+    }
+    // 追踪目标
+    const dx=b.target.x - b.x;
+    const dy=(b.target.y) - b.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    b.angle=Math.atan2(dy,dx);
+    if(dist < b.speed+8){
+      // 命中！
+      b.alive=false;
+      game.bullets.splice(i,1);
+      hitPlane(b.target);
+    } else {
+      b.x += (dx/dist)*b.speed;
+      b.y += (dy/dist)*b.speed;
+      // 尾焰粒子
+      game.trails.push({x:b.x, y:b.y, life:1, size:3+Math.random()*2});
+    }
+  }
+  // 更新尾焰
+  for(let i=game.trails.length-1;i>=0;i--){
+    const t=game.trails[i];
+    t.life-=0.08;
+    if(t.life<=0) game.trails.splice(i,1);
+  }
+}
+
+function hitPlane(p){
+  game.hits++;
+  p.hp--;
+  if(p.hp<=0){
+    p.dying=true;
+    explode(p.x,p.y,p.isCorrect?'#34d399':'#ef4444');
+    if(p.isCorrect){
+      // 答对
+      game.combo++;
+      if(game.combo>game.maxCombo) game.maxCombo=game.combo;
+      const gain = 100 + game.combo*10;
+      game.score+=gain;
+      game.kill++;
+      floatText(p.x,p.y,'+'+gain,'#34d399');
+      showToast('✓ 命中！','#34d399');
+      // 清除其他当前题飞机
+      game.curPlanes.forEach(cp=>{ if(cp!==p && !cp.dead){ cp.dying=true; cp.dead=true; }});
+      setTimeout(()=>{ game.lock=false; nextQuestion(); }, 450);
+    } else {
+      // 答错（击中干扰项）
+      game.combo=0;
+      game.score=Math.max(0,game.score-30);
+      floatText(p.x,p.y,'-30','#ef4444');
+      showToast('✗ 答错','#ef4444');
+      // 该干扰项消失，题目继续
+      setTimeout(()=>{ game.lock=false; }, 400);
+    }
+    updateHUD();
+  }
+}
+
+function planeEscaped(p){
+  if(p.dead) return;
+  p.dead=true; p.dying=true;
+  if(p.isCorrect){
+    // 正确答案逃脱 → 扣血
+    game.hp--; game.combo=0;
+    showToast('✗ 错过！','#ef4444');
+    explode(p.x,H-40,'#ef4444');
+    // 清除其他当前题飞机
+    game.curPlanes.forEach(cp=>{ if(cp!==p && !cp.dead){ cp.dying=true; cp.dead=true; }});
+    updateHUD();
+    if(game.hp<=0){ endGame(); return; }
+    setTimeout(()=>{ game.lock=false; nextQuestion(); },450);
+  } else {
+    // 干扰项逃脱，无影响
+  }
+}
+
+function explode(x,y,color){
+  for(let i=0;i<18;i++){
+    const a=Math.random()*Math.PI*2, s=1+Math.random()*4;
+    game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,color,size:2+Math.random()*3});
+  }
+}
+function floatText(x,y,text,color){
+  game.floats.push({x,y,text,color,life:1,vy:-1.2});
+}
+let toastTimer=null;
+function showToast(text,color){
+  const t=$('toast');
+  t.textContent=text; t.style.color=color;
+  t.style.transition='none'; t.style.opacity='1'; t.style.transform='translate(-50%,-50%) scale(1.2)';
+  clearTimeout(toastTimer);
+  requestAnimationFrame(()=>{
+    t.style.transition='all .6s ease'; t.style.opacity='0'; t.style.transform='translate(-50%,-80%) scale(1)';
+  });
+}
+
+/* ===== 更新 ===== */
+function updatePlanes(dt){
+  for(let i=game.planes.length-1;i>=0;i--){
+    const p=game.planes[i];
+    if(p.dead){ game.planes.splice(i,1); continue; }
+    if(p.dying){ p.dead=true; game.planes.splice(i,1); continue; }
+    p.wobble += 0.03;
+    p.x += Math.sin(p.wobble)*0.4;
+    p.y += p.vy;
+    // 边界
+    if(p.x<p.w/2) p.x=p.w/2;
+    if(p.x>W-p.w/2) p.x=W-p.w/2;
+    // 超出底部
+    if(p.y > H-60){ planeEscaped(p); }
+  }
+}
+function updateParticles(){
+  for(let i=game.particles.length-1;i>=0;i--){
+    const p=game.particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.1; p.life-=0.03;
+    if(p.life<=0) game.particles.splice(i,1);
+  }
+  for(let i=game.floats.length-1;i>=0;i--){
+    const f=game.floats[i];
+    f.y+=f.vy; f.life-=0.02;
+    if(f.life<=0) game.floats.splice(i,1);
+  }
+}
+function updatePlayer(){
+  // 飞机平滑追踪目标X位置
+  const dx=game.player.targetX - game.player.x;
+  game.player.x += dx*0.08;
+  game.player.x=Math.max(28,Math.min(W-28,game.player.x));
+}
+
+/* ===== 绘制 ===== */
+function drawBG(){
+  // 星空
+  ctx.fillStyle='#0a0e27';
+  ctx.fillRect(0,0,W,H);
+  // 渐变
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'rgba(59,130,246,0.08)'); g.addColorStop(1,'rgba(10,14,39,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // 星星
+  if(!drawBG.stars){
+    drawBG.stars=[];
+    for(let i=0;i<60;i++) drawBG.stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5,s:0.2+Math.random()*0.5});
+  }
+  drawBG.stars.forEach(s=>{
+    s.y+=s.s; if(s.y>H) s.y=0;
+    ctx.fillStyle='rgba(255,255,255,'+(0.3+s.r*0.3)+')';
+    ctx.fillRect(s.x,s.y,s.r,s.r);
+  });
+}
+
+function drawPlayer(){
+  const p=game.player;
+  ctx.save();
+  ctx.translate(p.x,p.y);
+  // 尾焰
+  ctx.fillStyle='#fbbf24';
+  ctx.beginPath();
+  const fl = 10+Math.random()*8;
+  ctx.moveTo(-8,18); ctx.lineTo(0,18+fl); ctx.lineTo(8,18); ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle='#ef4444';
+  ctx.beginPath();
+  ctx.moveTo(-4,18); ctx.lineTo(0,18+fl*0.6); ctx.lineTo(4,18); ctx.closePath();
+  ctx.fill();
+  // 机身
+  ctx.fillStyle='#7ec8ff';
+  ctx.beginPath();
+  ctx.moveTo(0,-24); ctx.lineTo(-8,6); ctx.lineTo(-22,14); ctx.lineTo(-22,20); ctx.lineTo(-6,16);
+  ctx.lineTo(0,20); ctx.lineTo(6,16); ctx.lineTo(22,20); ctx.lineTo(22,14); ctx.lineTo(8,6);
+  ctx.closePath(); ctx.fill();
+  // 驾驶舱
+  ctx.fillStyle='#1e3a5f';
+  ctx.beginPath(); ctx.ellipse(0,-6,5,8,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.beginPath(); ctx.ellipse(-1,-8,2,3,0,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawPlane(p){
+  ctx.save();
+  ctx.translate(p.x,p.y);
+  // 机翼阴影
+  ctx.shadowColor='rgba(0,0,0,0.4)'; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
+  // 机身（敌机朝下）
+  const col = p.isCorrect? null : null; // 不区分颜色，避免提示
+  ctx.fillStyle='#3a4a6a';
+  ctx.beginPath();
+  ctx.moveTo(0,22); ctx.lineTo(-9,-2); ctx.lineTo(-24,-10); ctx.lineTo(-24,-16);
+  ctx.lineTo(-7,-12); ctx.lineTo(0,-18); ctx.lineTo(7,-12); ctx.lineTo(24,-16);
+  ctx.lineTo(24,-10); ctx.lineTo(9,-2); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur=0;
+  // 高亮
+  ctx.fillStyle='rgba(255,255,255,0.08)';
+  ctx.fillRect(-20,-14,40,4);
+  // 驾驶舱
+  ctx.fillStyle='#1a2333';
+  ctx.beginPath(); ctx.ellipse(0,4,5,7,0,0,Math.PI*2); ctx.fill();
+  // 标记圆点（敌方红色）
+  ctx.fillStyle='#ef4444';
+  ctx.beginPath(); ctx.arc(0,4,2.5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // 选项文字（带背景）
+  const text=p.option;
+  ctx.font='600 14px "Microsoft YaHei",sans-serif';
+  const tw=ctx.measureText(text).width;
+  const bx=p.x, by=p.y-38;
+  ctx.fillStyle='rgba(0,0,0,0.7)';
+  roundRect(ctx, bx-tw/2-10, by-12, tw+20, 22, 7); ctx.fill();
+  ctx.strokeStyle='rgba(126,200,255,0.4)';
+  ctx.lineWidth=1; roundRect(ctx, bx-tw/2-10, by-12, tw+20, 22, 7); ctx.stroke();
+  ctx.fillStyle='#e6ecff';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(text, bx, by);
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+function drawBullets(){
+  // 尾焰
+  game.trails.forEach(t=>{
+    ctx.globalAlpha=t.life*0.6;
+    ctx.fillStyle='#fbbf24';
+    ctx.beginPath();
+    ctx.arc(t.x,t.y,t.size*t.life,0,Math.PI*2);
+    ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  // 炮弹
+  game.bullets.forEach(b=>{
+    ctx.save();
+    ctx.translate(b.x,b.y);
+    ctx.rotate(b.angle+Math.PI/2);
+    // 尾焰
+    ctx.fillStyle='#fbbf24';
+    ctx.shadowColor='#fbbf24'; ctx.shadowBlur=10;
+    ctx.beginPath();
+    ctx.moveTo(-3,b.h/2); ctx.lineTo(0,b.h/2+8+Math.random()*6); ctx.lineTo(3,b.h/2); ctx.closePath();
+    ctx.fill();
+    // 弹体
+    ctx.shadowBlur=6;
+    ctx.fillStyle='#fbbf24';
+    ctx.beginPath();
+    ctx.ellipse(0,0,b.w/2,b.h/2,0,0,Math.PI*2);
+    ctx.fill();
+    // 高光
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.ellipse(0,-2,1.5,b.h/3,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+function drawParticles(){
+  game.particles.forEach(p=>{
+    ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);
+  });
+  ctx.globalAlpha=1;
+  game.floats.forEach(f=>{
+    ctx.globalAlpha=Math.max(0,f.life);
+    ctx.fillStyle=f.color;
+    ctx.font='800 18px "Microsoft YaHei",sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(f.text,f.x,f.y);
+  });
+  ctx.globalAlpha=1;
+}
+
+/* ===== HUD ===== */
+function updateHUD(){
+  $('hudScore').textContent=game.score;
+  $('hudCombo').textContent=game.combo;
+  const hp=$('hpBar');
+  hp.innerHTML='';
+  for(let i=0;i<3;i++){
+    const h=document.createElement('span');
+    h.className='hp-heart'+(i>=game.hp?' lost':'');
+    h.textContent='❤';
+    hp.appendChild(h);
+  }
+}
+
+/* ===== 主循环 ===== */
+function loop(ts){
+  if(!game.running) return;
+  game.raf=requestAnimationFrame(loop);
+  if(game.paused){ game.lastTs=ts; return; }
+  const dt=Math.min(40, ts-(game.lastTs||ts));
+  game.lastTs=ts;
+
+  updatePlayer();
+  updateBullets(dt);
+  updatePlanes(dt);
+  updateParticles();
+
+  drawBG();
+  drawPlanes_all();
+  drawBullets();
+  drawPlayer();
+  drawParticles();
+  drawTrails();
+}
+function drawPlanes_all(){ game.planes.forEach(drawPlane); }
+function drawTrails(){ /* 尾焰已在drawBullets中绘制 */ }
+
+/* ===== 开始/结束 ===== */
+function startGame(){
+  selScreen.classList.remove('active');
+  endScreen.classList.remove('active');
+  gameScreen.classList.add('active');
+  resize();
+  resetGame();
+  if(game.raf) cancelAnimationFrame(game.raf);
+  game.lastTs=0;
+  game.raf=requestAnimationFrame(loop);
+}
+
+function endGame(){
+  game.running=false;
+  cancelAnimationFrame(game.raf);
+  $('endScore').textContent=game.score;
+  $('endKill').textContent=game.kill;
+  const acc = game.shots>0? Math.round(game.hits/game.shots*100):0;
+  $('endAcc').textContent=acc+'%';
+  $('endMaxCombo').textContent=game.maxCombo;
+  if(game.hp<=0){
+    $('endIcon').textContent='💥'; $('endTitle').textContent='飞机被击落！';
+    $('endSub').textContent='别灰心，再战一局！';
+  } else {
+    $('endIcon').textContent='🏆'; $('endTitle').textContent='词汇通关！';
+    $('endSub').textContent='太棒了，全部题目已完成！';
+  }
+  setTimeout(()=>{
+    gameScreen.classList.remove('active');
+    endScreen.classList.add('active');
+  },600);
+}
+
+/* ===== 暂停 ===== */
+function togglePause(){
+  if(!game.running) return;
+  game.paused=!game.paused;
+  $('pauseOverlay').classList.toggle('show',game.paused);
+}
+$('pauseBtn').onclick=togglePause;
+$('resumeBtn').onclick=togglePause;
+$('quitBtn').onclick=()=>{
+  game.running=false; game.paused=false;
+  cancelAnimationFrame(game.raf);
+  $('pauseOverlay').classList.remove('show');
+  gameScreen.classList.remove('active');
+  selScreen.classList.add('active');
+};
+
+/* ===== 按钮绑定 ===== */
+startBtn.onclick=()=>{
+  if(state.pool.length<4) return;
+  startGame();
+};
+$('againBtn').onclick=()=>{ startGame(); };
+$('menuBtn').onclick=()=>{
+  endScreen.classList.remove('active');
+  selScreen.classList.add('active');
+};
+
+/* ===== 初始化 ===== */
+renderOptions();
+resize();
+
+})();
+</script>
+</body>
+</html>

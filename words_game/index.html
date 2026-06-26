@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词游戏 - Think 1 Level 1</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        /* ========== 顶部导航栏 ========== */
+        .top-nav {
+            width: 100%;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .top-nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+            padding: 0 20px;
+            gap: 12px;
+        }
+        .nav-brand {
+            font-weight: bold;
+            font-size: 1.15rem;
+            color: #667eea;
+            text-decoration: none;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 4px;
+            list-style: none;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+        .nav-links a {
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #444;
+            font-weight: 600;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .nav-links a:hover { background: #667eea; color: #fff; }
+        .nav-links a.active { background: #667eea; color: #fff; }
+
+        /* ========== 页面内容 ========== */
+        .page-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+        }
+        .container {
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+        }
+        .header {
+            margin-bottom: 40px;
+            color: white;
+        }
+        .header h1 {
+            font-size: 2.6rem;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .header p {
+            font-size: 1.15rem;
+            opacity: 0.95;
+        }
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 26px;
+            margin-bottom: 40px;
+        }
+        .game-card {
+            background: white;
+            padding: 36px 26px;
+            border-radius: 16px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .game-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+        }
+        .game-card .tag {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: linear-gradient(135deg, #00b894, #55efc4);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: bold;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: 18px;
+        }
+        .game-title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        .game-desc {
+            font-size: 0.98rem;
+            opacity: 0.8;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .game-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .feature-chip {
+            background: #f0f4ff;
+            color: #667eea;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .game-card.coming {
+            opacity: 0.65;
+        }
+        .game-card.coming .tag {
+            background: linear-gradient(135deg, #a0a0b0, #c0c0d0);
+        }
+        .footer {
+            color: white;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 600px) {
+            .header h1 { font-size: 2rem; }
+            .nav-brand { font-size: 1rem; }
+            .nav-links a { padding: 6px 10px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="top-nav-inner">
+            <a href="../index.html" class="nav-brand">🧠 Think 1 学习平台</a>
+            <ul class="nav-links">
+                <li><a href="../index.html">🏠 首页</a></li>
+                <li><a href="../summary/index.html">📚 知识点总结</a></li>
+                <li><a href="index.html" class="active">🎮 单词游戏</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+        <div class="container">
+            <div class="header">
+                <h1>🎮 单词游戏</h1>
+                <p>边玩边学，轻松记忆 Think 1 Level 1 核心词汇</p>
+            </div>
+
+            <div class="games-grid">
+                <a href="plane.html" class="game-card">
+                    <span class="tag">热门</span>
+                    <div class="game-icon">✈️</div>
+                    <div class="game-title">单词打飞机</div>
+                    <div class="game-desc">驾驶战机击落正确答案的敌机！支持按课次或主题选择词汇，题型含英译汉、汉译英与混合，边玩边记单词。</div>
+                    <div class="game-features">
+                        <span class="feature-chip">课次选择</span>
+                        <span class="feature-chip">主题选择</span>
+                        <span class="feature-chip">英译汉</span>
+                        <span class="feature-chip">汉译英</span>
+                        <span class="feature-chip">混合题型</span>
+                    </div>
+                </a>
+
+                <a href="scramble.html" class="game-card">
+                    <span class="tag">新上线</span>
+                    <div class="game-icon">🐝</div>
+                    <div class="game-title">单词拼字达人</div>
+                    <div class="game-desc">看中文释义，从字母池中选出正确字母拼出英文单词！干扰字母混在其中，考验你的拼写功力。</div>
+                    <div class="game-features">
+                        <span class="feature-chip">课次选择</span>
+                        <span class="feature-chip">主题选择</span>
+                        <span class="feature-chip">拼写训练</span>
+                        <span class="feature-chip">提示道具</span>
+                        <span class="feature-chip">限时模式</span>
+                    </div>
+                </a>
+
+                <a href="lianliankan.html" class="game-card">
+                    <span class="tag">新上线</span>
+                    <div class="game-icon">🔗</div>
+                    <div class="game-title">单词连连看</div>
+                    <div class="game-desc">连接英文单词与中文释义，路径不超过两个拐角即可消除！经典连连看玩法，考验眼力与词汇。</div>
+                    <div class="game-features">
+                        <span class="feature-chip">课次选择</span>
+                        <span class="feature-chip">主题选择</span>
+                        <span class="feature-chip">路径连线</span>
+                        <span class="feature-chip">提示道具</span>
+                        <span class="feature-chip">自动洗牌</span>
+                    </div>
+                </a>
+
+                <a href="memory.html" class="game-card">
+                    <span class="tag">新上线</span>
+                    <div class="game-icon">🃏</div>
+                    <div class="game-title">单词翻牌</div>
+                    <div class="game-desc">翻开卡牌找到英文与中文释义的配对，用最少步数完成挑战，锻炼记忆力！三星评级等你来拿。</div>
+                    <div class="game-features">
+                        <span class="feature-chip">课次选择</span>
+                        <span class="feature-chip">主题选择</span>
+                        <span class="feature-chip">3D翻牌</span>
+                        <span class="feature-chip">三星评级</span>
+                        <span class="feature-chip">偷看道具</span>
+                    </div>
+                </a>
+
+                <a href="match3.html" class="game-card">
+                    <span class="tag">新上线</span>
+                    <div class="game-icon">💥</div>
+                    <div class="game-title">单词消消乐</div>
+                    <div class="game-desc">交换相邻方块，让同组英文与中文连成3个以上即可消除！连锁消除拿高分，越玩越上瘾。</div>
+                    <div class="game-features">
+                        <span class="feature-chip">课次选择</span>
+                        <span class="feature-chip">主题选择</span>
+                        <span class="feature-chip">三消玩法</span>
+                        <span class="feature-chip">连锁反应</span>
+                        <span class="feature-chip">重力下落</span>
+                    </div>
+                </a>
+
+                <div class="game-card coming">
+                    <span class="tag">敬请期待</span>
+                    <div class="game-icon">🌧️</div>
+                    <div class="game-title">单词雨</div>
+                    <div class="game-desc">单词从天而降，快速输入正确翻译消除单词，挑战你的反应速度与词汇量。</div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>© 2024 Think 1 学习平台 · 单词游戏 | 持续更新中</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
