@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Think 1 第二版 · 学习平台</title>
+    <style>
+        :root {
+            --primary: #6C5CE7;
+            --primary-light: #A29BFE;
+            --primary-dark: #4834D4;
+            --accent: #FD79A8;
+            --success: #00B894;
+            --warning: #FDCB6E;
+            --info: #74B9FF;
+            --bg: #F8F9FE;
+            --text: #2D3436;
+            --text-light: #636E72;
+            --card-bg: #FFFFFF;
+            --shadow: 0 2px 16px rgba(108,92,231,0.08);
+            --shadow-hover: 0 8px 30px rgba(108,92,231,0.15);
+            --radius: 14px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #B2BEC3; border-radius: 3px; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+
+        /* 头部 Hero */
+        .hero {
+            text-align: center;
+            padding: 60px 20px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -20%;
+            width: 140%;
+            height: 200%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 40%, var(--accent) 100%);
+            border-radius: 0 0 50% 50%;
+            z-index: -1;
+            opacity: 0.06;
+        }
+        .hero h1 {
+            font-size: 2.6em;
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero .subtitle {
+            font-size: 1.15em;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+        .hero .badge-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+        .hero .badge {
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .badge-level { background: #EDE7FF; color: var(--primary); }
+        .badge-exam { background: #FFF0F5; color: var(--accent); }
+        .badge-edition { background: #E0F7FA; color: #00838F; }
+
+        /* 模块卡片网格 */
+        .section-title {
+            font-size: 1.35em;
+            font-weight: 700;
+            color: var(--text);
+            margin: 50px 0 24px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title .count {
+            font-size: 0.7em;
+            background: var(--primary);
+            color: #fff;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .module-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-top: 4px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .module-card::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 100px; height: 100px;
+            background: var(--primary);
+            opacity: 0.03;
+            border-radius: 0 0 0 100%;
+            transition: all 0.3s ease;
+        }
+        .module-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+        .module-card:hover::after {
+            width: 140px; height: 140px;
+            opacity: 0.06;
+        }
+        .module-card .card-icon {
+            font-size: 2.4em;
+            margin-bottom: 14px;
+        }
+        .module-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .module-card p {
+            font-size: 0.9em;
+            color: var(--text-light);
+            margin-bottom: 14px;
+            line-height: 1.6;
+        }
+        .module-card .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .module-card .card-tag {
+            font-size: 0.75em;
+            padding: 3px 10px;
+            border-radius: 10px;
+            background: #EDE7FF;
+            color: var(--primary);
+            font-weight: 500;
+        }
+        .module-card .card-arrow {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 0.85em;
+            color: var(--primary);
+            font-weight: 600;
+            transition: transform 0.3s ease;
+        }
+        .module-card:hover .card-arrow {
+            transform: translateX(4px);
+        }
+
+        /* 已启用 vs 即将推出 */
+        .module-card.active { border-top-color: var(--success); }
+        .module-card.coming-soon {
+            border-top-color: #DFE6E9;
+            cursor: default;
+            opacity: 0.65;
+        }
+        .module-card.coming-soon:hover {
+            transform: none;
+            box-shadow: var(--shadow);
+        }
+        .module-card.coming-soon::before {
+            content: '即将推出';
+            position: absolute;
+            top: 16px; right: 16px;
+            font-size: 0.7em;
+            padding: 3px 10px;
+            border-radius: 8px;
+            background: #F8F9FA;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+        .module-card.coming-soon .card-arrow { display: none; }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+            font-size: 0.85em;
+            border-top: 1px solid #E0E0F0;
+            margin-top: 60px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.8em; }
+            .module-grid { grid-template-columns: 1fr; }
+            .hero { padding: 40px 15px 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <h1>🧠 <span>Think 1</span> 第二版 · 学习平台</h1>
+            <p class="subtitle">剑桥大学出版社 · 青少年综合英语教材 · Level 1</p>
+            <div class="badge-row">
+                <span class="badge badge-level">CEFR A2</span>
+                <span class="badge badge-exam">剑桥 KET 对标</span>
+                <span class="badge badge-edition">Second Edition</span>
+            </div>
+        </div>
+
+        <!-- 可用模块 -->
+        <div class="section-title">
+            📦 可用模块 <span class="count">1</span>
+        </div>
+        <div class="module-grid">
+            <a href="summary/index.html" class="module-card active">
+                <div class="card-icon">📚</div>
+                <h3>知识点总结</h3>
+                <p>Welcome + 12单元完整知识点，含语法、词汇、句型、练习，支持搜索和交互式刷题。</p>
+                <div class="card-tags">
+                    <span class="card-tag">语法体系</span>
+                    <span class="card-tag">主题词汇</span>
+                    <span class="card-tag">交互练习</span>
+                    <span class="card-tag">KET备考</span>
+                </div>
+                <span class="card-arrow">进入模块 →</span>
+            </a>
+        </div>
+
+        <!-- 规划中的模块 -->
+        <div class="section-title">
+            🚧 规划中的模块 <span class="count">4</span>
+        </div>
+        <div class="module-grid">
+            <div class="module-card coming-soon">
+                <div class="card-icon">🎧</div>
+                <h3>听力训练</h3>
+                <p>单元配套听力练习，涵盖对话理解、短文听写、关键词捕捉等题型。</p>
+                <div class="card-tags">
+                    <span class="card-tag">听力理解</span>
+                    <span class="card-tag">听写</span>
+                    <span class="card-tag">场景对话</span>
+                </div>
+            </div>
+            <div class="module-card coming-soon">
+                <div class="card-icon">📝</div>
+                <h3>词汇闯关</h3>
+                <p>按单元分类的词汇记忆卡，包含英汉互译、拼写练习、闪卡记忆模式。</p>
+                <div class="card-tags">
+                    <span class="card-tag">单词闪卡</span>
+                    <span class="card-tag">拼写测试</span>
+                    <span class="card-tag">单元词汇</span>
+                </div>
+            </div>
+            <div class="module-card coming-soon">
+                <div class="card-icon">📖</div>
+                <h3>课文精读</h3>
+                <p>每单元课文原文 + 译文对照，重点句型高亮标注，配套阅读理解练习。</p>
+                <div class="card-tags">
+                    <span class="card-tag">原文阅读</span>
+                    <span class="card-tag">译文对照</span>
+                    <span class="card-tag">阅读理解</span>
+                </div>
+            </div>
+            <div class="module-card coming-soon">
+                <div class="card-icon">📊</div>
+                <h3>综合测试</h3>
+                <p>阶段性单元测试和全册模拟卷，题型对标KET考试，自动评分 + 错题回顾。</p>
+                <div class="card-tags">
+                    <span class="card-tag">单元测试</span>
+                    <span class="card-tag">KET模拟</span>
+                    <span class="card-tag">错题本</span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Think 1 Second Edition · Cambridge University Press · 仅供学习参考</p>
+        </footer>
+    </div>
+</body>
+</html>
